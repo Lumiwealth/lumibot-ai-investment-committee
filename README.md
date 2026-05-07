@@ -2,7 +2,7 @@
 
 Research, debate, backtest, explain, and execute real Lumibot strategies with a plain-Python multi-agent workflow.
 
-![Lumibot AI trading agents](assets/ai_trading_agents_overview.png)
+![Lumibot AI trading agents](assets/images/hero_architecture.png)
 
 This repository is a focused example built on top of [Lumibot](https://github.com/Lumiwealth/lumibot). It shows how to create an AI investment committee without LangGraph:
 
@@ -11,13 +11,15 @@ This repository is a focused example built on top of [Lumibot](https://github.co
 3. Bear researcher attacks the trade and identifies risks.
 4. Portfolio manager checks risk limits and places Lumibot orders only when the evidence is good enough.
 
-![Investment committee flow](assets/investment_committee.png)
+![Investment committee flow](assets/images/investment_committee_architecture.png)
 
 ## Why This Is Different
 
 Most AI trading demos stop at advice. Lumibot agents run inside the same strategy lifecycle used for backtesting, paper trading, and live execution. The same code can analyze point-in-time evidence during a backtest and then place real broker orders when deployed.
 
-![Backtest and live parity](assets/backtest_live_parity.png)
+![Backtest and live parity](assets/images/backtest_to_live_pipeline.png)
+
+![Lumibot vs TradingAgents](assets/images/lumibot_vs_tradingagents.png)
 
 ## Evidence Pack
 
@@ -29,27 +31,33 @@ The research role is explicitly prompted to gather:
 - SEC income statement, balance sheet, cash flow, and company facts.
 - SEC filing lists and targeted filing search.
 
-![Evidence pack](assets/evidence_pack.png)
+![Evidence pack](assets/images/evidence_pack.png)
 
 ## Bull And Bear Debate
 
 The bull and bear agents receive the same evidence pack and can call read-only tools to dig deeper. The portfolio manager receives both cases before making a decision.
 
-![Bull and bear debate](assets/bull_bear_debate.png)
+![Bull and bear debate](assets/images/bull_bear_debate.png)
+
+![Portfolio decision](assets/images/portfolio_decision.png)
 
 ## SEC Fundamentals
 
 SEC fundamentals use public SEC EDGAR APIs directly, require no API key, and are cached locally. Backtests are gated by filed date or acceptance timestamp so the agent does not see future filings.
 
-![SEC point-in-time cache](assets/sec_cache.png)
+![SEC point-in-time cache](assets/images/sec_fundamentals_filings.png)
 
 ## Memory And Notifications
 
 Lumibot includes local JSONL memory for decisions, lessons, and theses. Telegram notifications can be enabled when you want a bot to send decision summaries.
 
-![Memory and notifications](assets/memory_notifications.png)
+![Memory and notifications](assets/images/memory_journal.png)
+
+![Telegram notification](assets/images/telegram_notification.png)
 
 ## Quick Start
+
+![Run locally](assets/images/how_to_run_locally.png)
 
 ```bash
 python -m venv .venv
@@ -65,6 +73,20 @@ python scripts/run_committee_backtest.py
 ```
 
 The script writes results under `artifacts/ai_committee_real_backtests/`.
+
+For local Lumibot development, keep this repository next to `/Users/robertgrzesik/Development/lumibot` or install your Lumibot checkout:
+
+```bash
+pip install -e ../lumibot
+```
+
+To run the deterministic no-LLM smoke wrapper against a sibling Lumibot checkout:
+
+```bash
+python scripts/run_deterministic_smoke.py
+```
+
+![Backtest result artifact](assets/images/backtest_result_artifact.png)
 
 ## Models
 
@@ -83,4 +105,10 @@ Use a cheaper model for evidence gathering and a stronger model for adversarial 
 
 Research, bull, and bear agents use `allow_trading=False`. They can inspect prices, indicators, SEC filings, news, positions, open orders, and memory, but they cannot submit, cancel, or modify orders. The portfolio manager is the only trading-enabled role.
 
-![Portfolio decision](assets/portfolio_decision.png)
+![Tool permissions](assets/images/tool_permissions.png)
+
+## Adapting To Paper Or Live Trading
+
+Start with the backtest runner. Once the evidence, risk limits, and artifact review look sane, adapt the same `AIInvestmentCommitteeStrategy` to a paper broker using the normal Lumibot broker setup. Keep the research, bull, and bear agents read-only, and only enable trading for the final portfolio-manager agent.
+
+Never run live trading until you have reviewed the orders and risk controls in paper trading.
