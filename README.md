@@ -6,7 +6,7 @@ Research, debate, backtest, explain, and execute real Lumibot strategies with a 
 
 This repository is a focused example built on top of [Lumibot](https://github.com/Lumiwealth/lumibot). It shows how to create an AI investment committee without LangGraph:
 
-1. Evidence researcher gathers market data, indicators, news, SEC fundamentals, and SEC filings.
+1. Evidence researcher gathers market data, indicators, news, SEC fundamentals, SEC filings, and FRED macro data.
 2. Bull researcher builds the strongest long-only case.
 3. Bear researcher attacks the trade and identifies risks.
 4. Portfolio manager checks risk limits and places Lumibot orders only when the evidence is good enough.
@@ -30,6 +30,7 @@ The research role is explicitly prompted to gather:
 - Recent Alpaca/Benzinga news when Alpaca credentials are configured.
 - SEC income statement, balance sheet, cash flow, and company facts.
 - SEC filing lists and targeted filing search.
+- FRED macro series such as rates, inflation, labor, growth, liquidity, and credit spreads.
 
 ![Evidence pack](assets/images/evidence_pack.png)
 
@@ -46,6 +47,10 @@ The bull and bear agents receive the same evidence pack and can call read-only t
 SEC fundamentals use public SEC EDGAR APIs directly, require no API key, and are cached locally. Backtests are gated by filed date or acceptance timestamp so the agent does not see future filings.
 
 ![SEC point-in-time cache](assets/images/sec_fundamentals_filings.png)
+
+## FRED Macro Data
+
+FRED macro tools are built into Lumibot agents. They work with curated public CSV series by default and use `FRED_API_KEY` for official FRED/ALFRED vintage observations when you need stricter point-in-time macro backtests.
 
 ## Memory And Notifications
 
@@ -73,6 +78,8 @@ python scripts/run_committee_backtest.py
 ```
 
 The script writes results under `artifacts/ai_committee_real_backtests/`.
+
+The default benchmark window is `2026-03-29` to `2026-04-29`, matching the BotSpot comparison runs used for Gemini, Claude, GPT, and Grok news-enabled strategies.
 
 For local Lumibot development, keep this repository next to `/Users/robertgrzesik/Development/lumibot` or install your Lumibot checkout:
 
@@ -103,7 +110,7 @@ Use a cheaper model for evidence gathering and a stronger model for adversarial 
 
 ## Safety
 
-Research, bull, and bear agents use `allow_trading=False`. They can inspect prices, indicators, SEC filings, news, positions, open orders, and memory, but they cannot submit, cancel, or modify orders. The portfolio manager is the only trading-enabled role.
+Research, bull, and bear agents use `allow_trading=False`. They can inspect prices, indicators, SEC filings, FRED macro data, news, positions, open orders, and memory, but they cannot submit, cancel, or modify orders. The portfolio manager is the only trading-enabled role.
 
 ![Tool permissions](assets/images/tool_permissions.png)
 

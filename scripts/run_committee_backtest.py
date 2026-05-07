@@ -53,6 +53,7 @@ def main() -> None:
     os.environ["LUMIBOT_CACHE_FOLDER"] = str(artifact_dir / "cache")
     os.environ["LUMIBOT_MEMORY_DIR"] = str(artifact_dir / "memory")
     os.environ["LUMIBOT_SEC_CACHE_DIR"] = str(artifact_dir / "sec")
+    os.environ["LUMIBOT_FRED_CACHE_DIR"] = str(artifact_dir / "fred")
 
     stats_file = artifact_dir / "stats.csv"
     trades_file = artifact_dir / "trades.csv"
@@ -62,19 +63,16 @@ def main() -> None:
     trading_fee = TradingFee(percent_fee=0.001)
     result, strategy = AIInvestmentCommitteeStrategy.run_backtest(
         datasource_class=YahooDataBacktesting,
-        backtesting_start=datetime(2023, 1, 3),
-        backtesting_end=datetime(2024, 1, 10),
+        backtesting_start=datetime(2026, 3, 29),
+        backtesting_end=datetime(2026, 4, 29),
         benchmark_asset=Asset("SPY", Asset.AssetType.STOCK),
         buy_trading_fees=[trading_fee],
         sell_trading_fees=[trading_fee],
         quote_asset=Asset("USD", Asset.AssetType.FOREX),
         budget=10000,
         parameters={
-            "universe": ["AAPL"],
             "max_position_pct": 0.20,
-            "max_new_positions_per_run": 1,
-            "committee_start_on_or_after": "2024-01-08",
-            "run_once": True,
+            "max_new_positions_per_run": 2,
             "enable_notifications": False,
         },
         stats_file=str(stats_file),
