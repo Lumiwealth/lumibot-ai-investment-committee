@@ -1,68 +1,81 @@
 # Lumibot AI Investment Committee
 
-Research, debate, backtest, explain, and execute real Lumibot strategies with a plain-Python multi-agent workflow.
+A runnable example showing how [Lumibot](https://github.com/Lumiwealth/lumibot) can run multiple AI agents inside a normal Python trading strategy.
+
+Lumibot itself is not only an agent framework. It is a Python trading framework for deterministic strategies, AI-agent strategies, backtesting, paper trading, and live broker execution. This repository focuses on one high-value pattern: an AI investment committee that researches a trade, builds bull and bear cases, checks risk, and can place real Lumibot orders.
 
 ![Lumibot AI trading agents](assets/images/hero_architecture.png)
 
-This repository is a focused example built on top of [Lumibot](https://github.com/Lumiwealth/lumibot). It shows how to create an AI investment committee without LangGraph:
+## What This Example Shows
 
-1. Evidence researcher gathers market data, indicators, news, SEC fundamentals, SEC filings, and FRED macro data.
-2. Bull researcher builds the strongest long-only case.
-3. Bear researcher attacks the trade and identifies risks.
-4. Portfolio manager checks risk limits and places Lumibot orders only when the evidence is good enough.
+The strategy in this repo uses plain Lumibot code. There is no LangGraph workflow runtime. The agents run from the normal `on_trading_iteration()` flow.
 
-![Investment committee flow](assets/images/investment_committee_architecture.png)
+- An evidence researcher gathers market data, indicators, news, SEC fundamentals, SEC filings, and optional FRED macro data.
+- A bull case agent builds the strongest long thesis.
+- A bear case agent looks for risks, red flags, and reasons to avoid the trade.
+- A portfolio manager agent checks cash, positions, open orders, and risk limits before submitting any order.
 
-## Why This Is Different
+![AI investment committee workflow](assets/images/investment_committee_architecture.png)
 
-Most AI trading demos stop at advice. Lumibot agents run inside the same strategy lifecycle used for backtesting, paper trading, and live execution. The same code can analyze point-in-time evidence during a backtest and then place real broker orders when deployed.
+## Why Lumibot Matters Here
+
+Most AI trading demos stop at advice. Lumibot can run the same strategy through a backtest, paper account, or live broker account. That matters because the AI decision can be tested against historical data before it is trusted with real execution.
 
 ![Backtest and live parity](assets/images/backtest_to_live_pipeline.png)
 
-![Lumibot vs TradingAgents](assets/images/lumibot_vs_tradingagents.png)
+Compared with advisory-only agent demos, this example is designed around:
 
-## Evidence Pack
+- Backtesting agent decisions over a historical window.
+- Point-in-time research tools so backtests do not read future filings, macro revisions, news, or indicators.
+- Real Lumibot order creation and submission from the trading-enabled agent only.
+- Inspectable artifacts so you can review what the agents saw, why they traded, and which tools were called.
 
-The research role is explicitly prompted to gather:
+## Safety Model
 
-- Current prices and visible historical market data.
+The committee creates three read-only research agents and one trading-enabled portfolio manager:
+
+```python
+self.agents.create(
+    name="evidence_researcher",
+    model="openai/gpt-5.4-mini",
+    allow_trading=False,
+    system_prompt=research_prompt,
+)
+self.agents.create(
+    name="bull_researcher",
+    model="openai/gpt-5.5",
+    allow_trading=False,
+    system_prompt=bull_prompt,
+)
+self.agents.create(
+    name="bear_researcher",
+    model="openai/gpt-5.5",
+    allow_trading=False,
+    system_prompt=bear_prompt,
+)
+self.agents.create(
+    name="portfolio_manager",
+    model="openai/gpt-5.5",
+    allow_trading=True,
+    system_prompt=portfolio_prompt,
+)
+```
+
+`allow_trading=False` removes submit, modify, and cancel order tools. It still allows research agents to inspect positions, cash, open orders, historical data, indicators, SEC filings, FRED macro data, memory, and notifications.
+
+## Research Tools
+
+The evidence pack can include:
+
+- Market data and visible historical bars.
 - Technical indicators such as RSI, MACD, moving averages, ATR, and trend context.
 - Recent Alpaca/Benzinga news when Alpaca credentials are configured.
-- SEC income statement, balance sheet, cash flow, and company facts.
-- SEC filing lists and targeted filing search.
-- FRED macro series such as rates, inflation, labor, growth, liquidity, and credit spreads.
+- SEC income statements, balance sheets, cash flows, company facts, filing lists, filing search, and filing documents.
+- FRED macro series when `FRED_API_KEY` is configured.
 
-![Evidence pack](assets/images/evidence_pack.png)
+![SEC fundamentals and point-in-time tools](assets/images/sec_fundamentals_filings.png)
 
-## Bull And Bear Debate
-
-The bull and bear agents receive the same evidence pack and can call read-only tools to dig deeper. The portfolio manager receives both cases before making a decision.
-
-![Bull and bear debate](assets/images/bull_bear_debate.png)
-
-![Portfolio decision](assets/images/portfolio_decision.png)
-
-## SEC Fundamentals
-
-SEC fundamentals use public SEC EDGAR APIs directly, require no API key, and are cached locally. Backtests are gated by filed date or acceptance timestamp so the agent does not see future filings.
-
-![SEC point-in-time cache](assets/images/sec_fundamentals_filings.png)
-
-## FRED Macro Data
-
-FRED macro tools are built into Lumibot agents. They work with curated public CSV series by default and use `FRED_API_KEY` for official FRED/ALFRED vintage observations when you need stricter point-in-time macro backtests.
-
-## Memory And Notifications
-
-Lumibot includes local JSONL memory for decisions, lessons, and theses. Telegram notifications can be enabled when you want a bot to send decision summaries.
-
-![Memory and notifications](assets/images/memory_journal.png)
-
-![Telegram notification](assets/images/telegram_notification.png)
-
-## Quick Start
-
-![Run locally](assets/images/how_to_run_locally.png)
+## Run Locally
 
 ```bash
 python -m venv .venv
@@ -77,11 +90,13 @@ Set `OPENAI_API_KEY` in `.env`, then run:
 python scripts/run_committee_backtest.py
 ```
 
-The script writes results under `artifacts/ai_committee_real_backtests/`.
+The script writes results under:
 
-The default benchmark window is `2026-03-29` to `2026-04-29`, matching the BotSpot comparison runs used for Gemini, Claude, GPT, and Grok news-enabled strategies.
+```text
+artifacts/ai_committee_real_backtests/
+```
 
-For local Lumibot development, keep this repository next to `/Users/robertgrzesik/Development/lumibot` or install your Lumibot checkout:
+For local Lumibot development, keep this repository next to your Lumibot checkout:
 
 ```bash
 pip install -e ../lumibot
@@ -92,8 +107,6 @@ To run the deterministic no-LLM smoke wrapper against a sibling Lumibot checkout
 ```bash
 python scripts/run_deterministic_smoke.py
 ```
-
-![Backtest result artifact](assets/images/backtest_result_artifact.png)
 
 ## Models
 
@@ -106,16 +119,30 @@ COMMITTEE_BEAR_MODEL=openai/gpt-5.5
 COMMITTEE_TRADER_MODEL=openai/gpt-5.5
 ```
 
-Use a cheaper model for evidence gathering and a stronger model for adversarial reasoning and the final portfolio decision.
+Use a cheaper model for evidence gathering and a stronger model for bull, bear, and final portfolio reasoning.
 
-## Safety
+## Artifacts
 
-Research, bull, and bear agents use `allow_trading=False`. They can inspect prices, indicators, SEC filings, FRED macro data, news, positions, open orders, and memory, but they cannot submit, cancel, or modify orders. The portfolio manager is the only trading-enabled role.
+Backtests leave normal Lumibot artifacts plus AI-specific traces and memory files. Use these to inspect the run after it finishes.
 
-![Tool permissions](assets/images/tool_permissions.png)
+![Backtest result artifact](assets/images/backtest_result_artifact.png)
 
-## Adapting To Paper Or Live Trading
+Common files include:
 
-Start with the backtest runner. Once the evidence, risk limits, and artifact review look sane, adapt the same `AIInvestmentCommitteeStrategy` to a paper broker using the normal Lumibot broker setup. Keep the research, bull, and bear agents read-only, and only enable trading for the final portfolio-manager agent.
+- Agent prompts and responses.
+- Tool calls and tool results.
+- Trade decisions and order rationale.
+- Memory JSONL files for decisions, lessons, and theses.
+- Backtest performance outputs.
 
-Never run live trading until you have reviewed the orders and risk controls in paper trading.
+## Paper Or Live Trading
+
+Start with the backtest runner. Once the evidence, risk limits, and artifact review look sane, adapt the same `AIInvestmentCommitteeStrategy` to a paper broker using normal Lumibot broker setup. Keep the research, bull, and bear agents read-only, and only enable trading for the portfolio manager.
+
+Never run live trading until you have reviewed orders and risk controls in paper trading.
+
+## Links
+
+- Lumibot: https://github.com/Lumiwealth/lumibot
+- Lumibot docs: https://lumibot.lumiwealth.com/
+- BotSpot: https://botspot.trade/?utm_source=lumibot+docs&utm_medium=documentation&utm_campaign=GitHub+Readme
