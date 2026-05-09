@@ -4,11 +4,13 @@ A runnable example showing how [Lumibot](https://github.com/Lumiwealth/lumibot) 
 
 Lumibot itself is not only an agent framework. It is a Python trading framework for deterministic strategies, AI-agent strategies, backtesting, paper trading, and live broker execution. This repository focuses on one high-value pattern: an AI investment committee that researches a trade, builds bull and bear cases, checks risk, and can place real Lumibot orders.
 
-![Lumibot AI trading agents](assets/images/hero_architecture.png)
+Full Lumibot docs: https://lumibot.lumiwealth.com/
+
+Managed no-code path: https://botspot.trade/?utm_source=github&utm_medium=readme&utm_campaign=lumibot_ai_investment_committee
 
 ## What This Example Shows
 
-The strategy in this repo uses plain Lumibot code. There is no LangGraph workflow runtime. The agents run from the normal `on_trading_iteration()` flow.
+The strategy in this repo uses plain Lumibot code. There is no LangGraph workflow runtime. The agents run from the normal `on_trading_iteration()` flow, so this is one concrete agent-flow example rather than a separate framework.
 
 - An evidence researcher gathers market data, indicators, news, SEC fundamentals, SEC filings, and optional FRED macro data.
 - A bull case agent builds the strongest long thesis.
@@ -29,6 +31,8 @@ Compared with advisory-only agent demos, this example is designed around:
 - Point-in-time research tools so backtests do not read future filings, macro revisions, news, or indicators.
 - Real Lumibot order creation and submission from the trading-enabled agent only.
 - Inspectable artifacts so you can review what the agents saw, why they traded, and which tools were called.
+
+This repository is intentionally narrow. Lumibot itself can also run single-agent flows, hybrid deterministic-plus-agent flows, risk-review flows, model-vs-model committees, and classic deterministic Python strategies.
 
 ## Safety Model
 
@@ -145,4 +149,4 @@ Never run live trading until you have reviewed orders and risk controls in paper
 
 - Lumibot: https://github.com/Lumiwealth/lumibot
 - Lumibot docs: https://lumibot.lumiwealth.com/
-- BotSpot: https://botspot.trade/?utm_source=lumibot+docs&utm_medium=documentation&utm_campaign=GitHub+Readme
+- BotSpot: https://botspot.trade/?utm_source=github&utm_medium=readme&utm_campaign=lumibot_ai_investment_committee
