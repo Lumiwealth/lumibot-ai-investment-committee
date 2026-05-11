@@ -81,6 +81,8 @@ The evidence pack can include:
 
 ## Run Locally
 
+![Run the committee locally](assets/images/run_committee_locally.png)
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate
