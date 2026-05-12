@@ -7,30 +7,13 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parent
 LOCAL_LUMIBOT = ROOT.parent / "lumibot"
+ARTIFACT_ROOT = ROOT / "artifacts" / "ai_committee_real_backtests"
+
+
 if LOCAL_LUMIBOT.exists():
     sys.path.insert(0, str(LOCAL_LUMIBOT))
-
-load_dotenv(ROOT / ".env")
-
-if not os.environ.get("OPENAI_API_KEY"):
-    raise RuntimeError("Set OPENAI_API_KEY in .env before running the committee backtest.")
-
-os.environ.setdefault("BACKTESTING_DATA_SOURCE", "none")
-os.environ.setdefault("LUMIBOT_DISABLE_DOTENV", "1")
-os.environ.setdefault("LUMIBOT_DISABLE_BACKTEST_PERFORMANCE_TRACKING", "1")
-os.environ.setdefault("COMMITTEE_RESEARCH_MODEL", "openai/gpt-5.4-mini")
-os.environ.setdefault("COMMITTEE_BULL_MODEL", "openai/gpt-5.5")
-os.environ.setdefault("COMMITTEE_BEAR_MODEL", "openai/gpt-5.5")
-os.environ.setdefault("COMMITTEE_TRADER_MODEL", "openai/gpt-5.5")
-
-from lumibot.backtesting import YahooDataBacktesting
-from lumibot.entities import Asset, TradingFee
-from lumibot.example_strategies.ai_investment_committee import AIInvestmentCommitteeStrategy
-
-
-ARTIFACT_ROOT = ROOT / "artifacts" / "ai_committee_real_backtests"
 
 
 def _json_safe(value):
@@ -46,6 +29,25 @@ def _json_safe(value):
 
 
 def main() -> None:
+    load_dotenv(ROOT / ".env")
+
+    if not os.environ.get("OPENAI_API_KEY"):
+        raise RuntimeError("Set OPENAI_API_KEY in .env before running the committee backtest.")
+
+    os.environ.setdefault("BACKTESTING_DATA_SOURCE", "none")
+    os.environ.setdefault("LUMIBOT_DISABLE_DOTENV", "1")
+    os.environ.setdefault("LUMIBOT_DISABLE_BACKTEST_PERFORMANCE_TRACKING", "1")
+    os.environ.setdefault("COMMITTEE_RESEARCH_MODEL", "openai/gpt-5.4-mini")
+    os.environ.setdefault("COMMITTEE_BULL_MODEL", "openai/gpt-5.5")
+    os.environ.setdefault("COMMITTEE_BEAR_MODEL", "openai/gpt-5.5")
+    os.environ.setdefault("COMMITTEE_TRADER_MODEL", "openai/gpt-5.5")
+
+    from lumibot.backtesting import YahooDataBacktesting
+    from lumibot.entities import Asset, TradingFee
+    from lumibot.example_strategies.ai_investment_committee import (
+        AIInvestmentCommitteeStrategy,
+    )
+
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
     artifact_dir = ARTIFACT_ROOT / run_id
     artifact_dir.mkdir(parents=True, exist_ok=True)
@@ -113,8 +115,8 @@ def main() -> None:
     result_path = artifact_dir / "result.json"
     result_path.write_text(json.dumps(summary, indent=2, sort_keys=True), encoding="utf-8")
 
-    readme = [
-        "# AI Investment Committee Real-Model Backtest",
+    artifact_readme = [
+        "# AI Investment Committee Backtest",
         "",
         f"- Run ID: `{run_id}`",
         f"- Artifact folder: `{artifact_dir.resolve()}`",
@@ -131,9 +133,17 @@ def main() -> None:
         "",
         *[f"- `{position}`" for position in positions],
     ]
-    (artifact_dir / "README.md").write_text("\n".join(readme), encoding="utf-8")
+    (artifact_dir / "README.md").write_text("\n".join(artifact_readme), encoding="utf-8")
 
-    print(json.dumps({"artifact_dir": str(artifact_dir.resolve()), "result": str(result_path.resolve())}, indent=2))
+    print(
+        json.dumps(
+            {
+                "artifact_dir": str(artifact_dir.resolve()),
+                "result": str(result_path.resolve()),
+            },
+            indent=2,
+        )
+    )
 
 
 if __name__ == "__main__":

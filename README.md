@@ -79,6 +79,15 @@ The evidence pack can include:
 
 ![SEC fundamentals and point-in-time tools](assets/images/sec_fundamentals_filings.png)
 
+## Repository Layout
+
+This repo is intentionally small:
+
+- `main.py` is the runnable Lumibot backtest entrypoint.
+- `.env.example` shows the environment variables you can configure.
+- `assets/images/` contains the README visuals.
+- `artifacts/` is created locally when you run the strategy and is ignored by git.
+
 ## Run Locally
 
 ![Run the committee locally](assets/images/run_committee_locally.png)
@@ -93,10 +102,10 @@ cp .env.example .env
 Set `OPENAI_API_KEY` in `.env`, then run:
 
 ```bash
-python scripts/run_committee_backtest.py
+python main.py
 ```
 
-The script writes results under:
+The strategy writes results under:
 
 ```text
 artifacts/ai_committee_real_backtests/
@@ -106,12 +115,6 @@ For local Lumibot development, keep this repository next to your Lumibot checkou
 
 ```bash
 pip install -e ../lumibot
-```
-
-To run the deterministic no-LLM smoke wrapper against a sibling Lumibot checkout:
-
-```bash
-python scripts/run_deterministic_smoke.py
 ```
 
 ## Models
