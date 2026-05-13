@@ -1,2 +1,1 @@
-lumibot
-python-dotenv
+lumibot>=4.5.12

@@ -10,7 +10,9 @@ Managed no-code path: https://botspot.trade/?utm_source=github&utm_medium=readme
 
 ## What This Example Shows
 
-The strategy in this repo uses plain Lumibot code. There is no LangGraph workflow runtime. The agents run from the normal `on_trading_iteration()` flow, so this is one concrete agent-flow example rather than a separate framework.
+The strategy in this repo uses plain Lumibot code. There is no LangGraph workflow runtime. The full strategy is in [`main.py`](main.py), where the agents are created in `initialize()` and run from the normal `on_trading_iteration()` flow.
+
+This is one concrete agent-flow example rather than a separate framework:
 
 - An evidence researcher gathers market data, indicators, news, SEC fundamentals, SEC filings, and optional FRED macro data.
 - A bull case agent builds the strongest long thesis.
@@ -33,6 +35,44 @@ Compared with advisory-only agent demos, this example is designed around:
 - Inspectable artifacts so you can review what the agents saw, why they traded, and which tools were called.
 
 This repository is intentionally narrow. Lumibot itself can also run single-agent flows, hybrid deterministic-plus-agent flows, risk-review flows, model-vs-model committees, and classic deterministic Python strategies.
+
+## How The Strategy Works
+
+The whole example is a normal Lumibot `Strategy` subclass:
+
+```python
+class AIInvestmentCommitteeStrategy(Strategy):
+    def initialize(self):
+        self.sleeptime = "1D"
+        self.agents.create(...)
+
+    def on_trading_iteration(self):
+        evidence = self.agents["evidence_researcher"].run(...)
+        bull = self.agents["bull_researcher"].run(...)
+        bear = self.agents["bear_researcher"].run(...)
+        decision = self.agents["portfolio_manager"].run(...)
+```
+
+On each trading day in the backtest:
+
+1. Lumibot calls `on_trading_iteration()`.
+2. The strategy builds a context object with the current simulated datetime, the allowed universe, and risk limits.
+3. The evidence researcher runs first. It can call read-only tools for market data, indicators, news, SEC filings, SEC financial statements, and FRED macro data.
+4. The bull researcher receives the evidence pack and argues for the best long-only opportunity.
+5. The bear researcher receives the evidence pack and bull case, then looks for reasons to avoid or reduce the trade.
+6. The portfolio manager receives all three outputs, checks the live/backtest account state, and is the only agent allowed to submit orders.
+
+The important part is that the agents are not outside Lumibot. They are part of the strategy lifecycle. In a backtest, the tools see the simulated date. In paper or live trading, the same strategy code sees the broker account and current market data.
+
+## The Code Path
+
+`main.py` contains both the strategy and the local backtest runner:
+
+- `AIInvestmentCommitteeStrategy.initialize()` creates the four agents.
+- `AIInvestmentCommitteeStrategy.on_trading_iteration()` runs the committee.
+- The `if __name__ == "__main__"` block runs a Yahoo daily-data backtest from `2026-03-29` to `2026-04-29`.
+
+That bottom runner is only for convenience. The actual strategy is the `AIInvestmentCommitteeStrategy` class, so you can copy that class into a normal Lumibot project or adapt it for paper trading.
 
 ## Safety Model
 
@@ -83,10 +123,10 @@ The evidence pack can include:
 
 This repo is intentionally small:
 
-- `main.py` is the runnable Lumibot backtest entrypoint.
-- `.env.example` shows the environment variables you can configure.
+- `main.py` contains the actual Lumibot strategy plus a small local backtest runner. It imports Lumibot and Python standard-library modules only.
+- `.env.example` shows the environment variables you can export before running.
 - `assets/images/` contains the README visuals.
-- `artifacts/` is created locally when you run the strategy and is ignored by git.
+- `.venv/`, `__pycache__/`, and any local artifacts are ignored by git.
 
 ## Run Locally
 
@@ -99,23 +139,25 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Set `OPENAI_API_KEY` in `.env`, then run:
+Set `OPENAI_API_KEY` in your shell, then run:
+
+```bash
+export OPENAI_API_KEY=your_openai_key_here
+```
+
+If you prefer to keep the values in `.env`, load them into your shell before running:
+
+```bash
+set -a
+source .env
+set +a
+```
 
 ```bash
 python main.py
 ```
 
-The strategy writes results under:
-
-```text
-artifacts/ai_committee_real_backtests/
-```
-
-For local Lumibot development, keep this repository next to your Lumibot checkout:
-
-```bash
-pip install -e ../lumibot
-```
+Lumibot prints the backtest summary and writes any configured logs or outputs through the normal Lumibot backtest machinery. The example does not need a custom runner, wrapper script, or local checkout path.
 
 ## Models
 
